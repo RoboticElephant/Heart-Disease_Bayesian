@@ -10,7 +10,7 @@ header-includes:
 - \fancyfoot[RE,RO]{\small \thepage}
 - \fancyfoot[CE,CO]{}
 - \headsep 1.5em
-output: pdf_document
+output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE}
