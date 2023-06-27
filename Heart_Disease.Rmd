@@ -1,0 +1,256 @@
+---
+header-includes:
+- \usepackage{fancyhdr}
+- \pagestyle{fancy}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+- \headheight 35pt
+- \fancyhead[LE,LO]{Josh Blakely}
+- \fancyhead[CO,CE]{\textbf{\Large Project}}
+- \fancyhead[RE,RO]{ISYE 6420 \\ \today}
+- \fancyfoot[RE,RO]{\small \thepage}
+- \fancyfoot[CE,CO]{}
+- \headsep 1.5em
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(cmdstanr)
+check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
+library(dplyr)
+library(pROC)
+
+set.seed(123)
+```
+
+# Introduction
+
+Cardiovascular diseases (CVDs) are the number one cause of death globably, taking an estimated 17.9 million lives each year.  This accounts for 31% of all deaths worldwide. Four out of five CVD deaths are due to hear attacks and strokes, and one-third of these deaths occur prematurely in people under 70 years of age. Cardiovascular disease are conditions that affect the structures or function of your heart, such as: abnormal heart rhythms or arrhythmias, aorta discease, marfen syndrome, congenital heart disease, coronary artery disease, etc. Heart failure is a common event caused by CVDs. The dataset that I am using contains eleven predictive values that can be used to predict a possible heart disease. The dataset was retrieved from Kaggle[^1]. The data is the combination of five different datasets [^2] that total 918 non-duplicate observations.
+
+[^1]: https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction?sort=recent-comments
+[^2]: fedesoriano. (September 2021). Heart Failure Prediction Dataset. Retrieved 4/24/2022 from https://www.kaggle.com/fedesoriano/heart-failure-prediction.
+
+The data is broken down into the eleven predictive values below:
+
+* Age: age of the patient [years]
+* Sex: sex of the patient [M: Male, F: Female]
+* ChestPainType: chest pain type [TA: Typical Angina, ATA: Atypical Angina, NAP: Non-Anginal Pain, ASY: Asymptomatic]
+* RestingBP: resting blood pressure [mm Hg]
+* Cholesterol: serum cholesterol [mg/dl]
+* FastingBS: fasting blood sugar [1: if FastingBS > 120 mg/dl, 0: otherwise]
+* RestingECG: resting electrocardiogram results [Normal: Normal, ST: having ST-T wave abnormality (T wave inversions and/or ST elevation or depression of > 0.05 mV), LVH: showing probable or definite left ventricular hypertrophy by Estes' criteria]
+* MaxHR: maximum heart rate achieved [Numeric value between 60 and 202]
+* ExerciseAngina: exercise-induced angina [Y: Yes, N: No]
+* Oldpeak: oldpeak = ST [Numeric value measured in depression]
+* ST_Slope: the slope of the peak exercise ST segment [Up: upsloping, Flat: flat, Down: downsloping]
+* HeartDisease: output class [1: heart disease, 0: Normal]
+
+People with cardiovascular disease or who are at high cardiovascular risk (due to the presence of one or more risk factors such as hypertension, diabetes, hyperlipidaemia or already established disease) need early detection and management. Therefore, can we determine if someone is more prone to cardiovascular disease, given the features?
+
+I will be using 20% of the data to test and verify the model and will be verifying the accuracy using AUC from ROC curve. 
+
+# Analysis
+
+## Data Cleaning:
+
+```{r, echo=F, results='hide'}
+# Input the data and store in df
+df <- read.csv("data/heart.csv")
+
+# convert text to numeric values. This is required for Bayes to use distributions with
+df$Sex <- df$Sex %>% as.factor %>% as.numeric
+df$ChestPainType <- df$ChestPainType %>% as.factor %>% as.numeric
+df$RestingECG <- df$RestingECG %>% as.factor %>% as.numeric
+df$ExerciseAngina <- df$ExerciseAngina %>% as.factor %>% as.numeric
+df$ST_Slope <- df$ST_Slope %>% as.factor %>% as.numeric
+```
+
+The first thing that should be done on any dataset is to plot the data and run basic analysis on each of the predictors. When reviewing the data, it was noticed that there were two glaring issues with the data. The first occurred in the `RestingBP`. 
+
+## Resting Blood Pressure
+
+```{r, echo=FALSE}
+plot(df$RestingBP, ylab = "Resting Blood Pressure", main = "Resting Blood Pressure with a zero Outlier")
+```
+
+We can see in the above that we have a resting blood pressure value of **0**, which would mean that this person is dead. I could have used Bayes to impute the incorrect/missing value, but I decided to remove it because in the end one less data point won't truly affect the analysis. Also there really isn't a point to set up a Bayes model to impute a single point, in my opinion, especially with how many good points we still have. After removing the outlier, we can see the new data appears to be within the necessary values for resting blood pressure.
+
+```{r, echo=F, results='hide'}
+# Can see that we have a single outlier. For this current case, we will just drop the outlier.
+df <- df[-which.min(df$RestingBP), ]
+rownames(df) <- 1:nrow(df)
+```
+
+```{r, echo=F}
+plot(df$RestingBP, ylab = "Resting Blood Pressure", main = "Resting Blood Pressure (no Outliers)")
+```
+
+## Cholesterol
+The second issue I found while exploring the data was with the `Cholesterol`. The dataset shows that a range of indexes have a `Cholesterol` value of zero, which also like resting blood pressure is impossible.
+
+```{r, echo=FALSE}
+plot(df$Cholesterol, ylab = 'Cholesterol', main = 'Multiple Incorrect Values for Cholesterol')
+```
+
+These zero values for `Cholesterol` account for *171* values, which is approximately **18%** of the data set. This is a significant value. Normally when encountering a data set with this large of incorrect data, the goal would be to either throw out the data that is incorrect or supply the mean of the observed values for all the missing data points. Even then this is a significant amount of incorrect data. I have decided to use Bayes MCMC to try and impute the data. I used non-informative priors allowing the data set to determine what the values should be. The model that was used for this can be seen in `Appendix A: Cholesterol Imputed`. Looking at the missing values, it appears that one of the five data sets didn't have correct values for `Cholesterol`. Again normally these would be thrown out, but I decided to use a Bayesian model to find what the imputed values would be. Due to the assumption that it is an incorrect data set, I didn't split the data into training and test sets for the imputation. I am using different models for each to make sure that there isn't any leakage for determining the imputed values to later predicting the test set. 
+
+The reason I have decided to split them was due to the fact that this data set is a combination of 5 different data sets from different areas that have been combined to create a single data set. I am making the assumption that because the missing values are all relatively next to each other, that they all came from the same data set. More than likely the data would not have the missing values and, therefore, would not need to be imputed before running through the model. I could have made adjustments to the model to impute the missing Cholesterol-values for a training data set and then using this distribution determine what it would be for the test data set. I decided instead to first impute all the values and then split them into training and test sets, which could then be run through a prediction model.
+
+```{r, echo=FALSE, results='hide', warning=F, message=F}
+# We will get the index of these '0' values and try to impute them
+idx.mis <- which(df$Cholesterol == 0)
+# Get the observed values
+idx.obs <- which(df$Cholesterol != 0)
+
+y.imp <- df$HeartDisease
+X.chol_obs <- df$Cholesterol[idx.obs]
+X.imp <- df[, !names(df) %in% c('HeartDisease', "Cholesterol")]
+
+# load in the data list
+impute_dl <- list(N=nrow(X.imp), 
+                  N_obs=length(idx.obs), N_mis=length(idx.mis),
+                  ix_obs=idx.obs, ix_mis=idx.mis,
+                  K=ncol(X.imp),
+                  X=X.imp, x_obs=X.chol_obs,
+                  y=y.imp
+                  )
+
+
+# compile the model
+mod.imp <- cmdstan_model('stan_models/cholesterol_impute.stan')
+
+# build the model
+fit.imp <- mod.imp$sample(
+  data = impute_dl,
+  seed = 123,
+  chains = 4,
+  parallel_chains = 4,
+  refresh = 500
+)
+
+# statistics
+df.imp <- df
+df.imp$Cholesterol[idx.mis] <- fit.imp$summary('x_mis')$mean
+```
+
+After running the data through the stan model, I was able to get imputed data points. Below you can see the graph of the missing values by themselves. 
+
+```{r, echo=F}
+plot(df.imp$Cholesterol[idx.mis], main = "Imputed Cholesterol", ylab = 'Cholesterol')
+plot(df.imp$Cholesterol, ylab = 'Cholesterol', main = 'All Cholesterol data points')
+```
+
+We can see that there is slight variation as compared to the mean value, but they aren't as varied as the original data points. No matter what was changed in the model, I was unable to get the wide variation that is seen the other data points, but the imputed data appears to make logical sense.
+
+# Results
+## Predictive Model:
+
+Now that I have a "cleaned" data set with filled in missing values for Cholesterol, I was able to create a logit regression model. This Stan model can be seen in `Appendix B: Logit Regression`.
+
+```{r, echo=F, results=F}
+y <- df.imp$HeartDisease
+X <- df.imp[, !names(df.imp) %in% c('HeartDisease')]
+
+# Split the data
+idx <- sample(1:nrow(X), nrow(X) * 0.8, replace = F)
+X.train <- X[idx,]
+y.train <- y[idx]
+X.test <- X[-idx,]
+y.test <- y[-idx]
+
+# load in the data
+data_list <- list(N=nrow(X.train), N_t=nrow(X.test), K=ncol(X.train),
+                  X=X.train, X_test=X.test,
+                  y=y.train, y_test=y.test
+                  )
+
+# compile the model
+mod <- cmdstan_model('stan_models/heart_disease.stan')
+
+# build the model
+fit <- mod$sample(
+  data = data_list,
+  seed = 123,
+  chains = 4,
+  parallel_chains = 4,
+  refresh = 500   # print update every 500 iterations
+)
+```
+
+I am building a simple Bernoulli logit model with normal prior for the betas.
+
+$$\alpha = \beta_0 + X * \beta_{1..k}$$
+
+Where:
+* X: predictive variables
+* $\beta_0$: intercept coefficient
+* $\beta_{1..k}$: coefficients for each of the predictive variables
+
+\begin{equation}
+  BernoulliLogit(y \mid \alpha) = Bernoulli(y \mid logit^{-1}(\alpha)) =\left\{
+  \begin{array}{@{}rl@{}}
+    logit^{-1}(\alpha), & if y = 1\\
+    1 - logit^{-1}(\alpha), & if y = 0
+  \end{array}\right.
+\end{equation}
+
+\begin{equation}
+  Bernoulli(y \mid logit^{-1}(\alpha)) =\left\{
+  \begin{array}{@{}rl@{}}
+    logit^{-1}(\beta_0 + X * \beta_{1..k}), & if y = 1\\
+    1 - logit^{-1}(\beta_0 + X * \beta_{1..k}), & if y = 0
+  \end{array}\right.
+\end{equation}
+
+Once the Bayesian model has been trained on the training set, I was able to supply the test variables (`X.test`) to the model. This allows me to predict the values for y on the test set. Grabbing the mean for all the different MCMC chains we are able to get the predicted values for y upon the test set. 
+
+```{r}
+# statistics
+ypred <- fit$summary('y_pred')$mean
+ypred
+```
+
+Now that we have the predicted values, let us check the AUC for the ROC curve to determine the accuracy of the model.
+
+```{r, echo=F}
+roc.score <- roc(y.test, ypred)
+plot(roc.score, main = "ROC Curve on Test Set for Predicted Values vs Actual")
+```
+
+The ROC curve looks really good for this model. Let's see what the AUC for this model is:
+
+```{r}
+auc(roc.score)
+```
+
+We can see that we have a decent score for the Bayesian predictive model with imputed Cholesterol values.
+
+
+# Conclusion
+
+In my project I have shown that we can use a Bayesian model to impute missing/incorrect values. This allows us to have more data to model in order to determine accuracy. We can see that using the imputed results can allow for a fairly accurate model that could be used to determine cardiovascular disease. Ideally, we would want cleaner data especially working with something so vital as the health of patients. Using Bayesian models has allowed us to retain data to help the model perform better overall. 
+
+Building a Bayesian model is fairly straightforward for imputing the incorrect data. This actually makes me wonder why the general consensus with the data science community is just to use the mean or median value. Determining which to use would be determined by the distribution of the data. It would be significantly easier to use the mean if the data is normally distributed, but if you have left or right shifted distribution it would affect the accuracy of using the mean/median. Whereas by imputing with a Bayesian model, we would be able to get much more accurate data that is related to the data's distribution.
+
+I would like to expand on this in the future to determine how a Bayesian logit predictive model compares to a general logit model. I would also like to compare the difference between dropping the missing values vs actual.
+
+
+
+
+\newpage
+# Appendix
+
+## Appendix A: Cholesterol Imputed
+
+```{r, echo=F}
+mod.imp$print()
+```
+
+\newpage
+## Appendix B: Logit Regression
+
+```{r, echo=F}
+mod$print()
+```
+
+
