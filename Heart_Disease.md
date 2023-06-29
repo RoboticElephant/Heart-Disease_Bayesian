@@ -22,12 +22,12 @@
 # Introduction
 
 Cardiovascular diseases (CVDs) are the number one cause of death
-globably, taking an estimated 17.9 million lives each year. This
+globally, taking an estimated 17.9 million lives each year. This
 accounts for 31% of all deaths worldwide. Four out of five CVD deaths
 are due to hear attacks and strokes, and one-third of these deaths occur
 prematurely in people under 70 years of age. Cardiovascular disease are
 conditions that affect the structures or function of your heart, such
-as: abnormal heart rhythms or arrhythmias, aorta discease, marfen
+as: abnormal heart rhythms or arrhythmias, aorta disease, marfen
 syndrome, congenital heart disease, coronary artery disease, etc. Heart
 failure is a common event caused by CVDs. The dataset that I am using
 contains eleven predictive values that can be used to predict a possible

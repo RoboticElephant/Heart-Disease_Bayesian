@@ -6,7 +6,7 @@ header-includes:
 - \headheight 35pt
 - \fancyhead[LE,LO]{Josh Blakely}
 - \fancyhead[CO,CE]{\textbf{\Large Project}}
-- \fancyhead[RE,RO]{ISYE 6420 \\ \today}
+- \fancyhead[RE,RO]{\today}
 - \fancyfoot[RE,RO]{\small \thepage}
 - \fancyfoot[CE,CO]{}
 - \headsep 1.5em
@@ -28,7 +28,7 @@ set.seed(123)
 
 # Introduction
 
-Cardiovascular diseases (CVDs) are the number one cause of death globably, taking an estimated 17.9 million lives each year.  This accounts for 31% of all deaths worldwide. Four out of five CVD deaths are due to hear attacks and strokes, and one-third of these deaths occur prematurely in people under 70 years of age. Cardiovascular disease are conditions that affect the structures or function of your heart, such as: abnormal heart rhythms or arrhythmias, aorta discease, marfen syndrome, congenital heart disease, coronary artery disease, etc. Heart failure is a common event caused by CVDs. The dataset that I am using contains eleven predictive values that can be used to predict a possible heart disease. The dataset was retrieved from Kaggle[^1]. The data is the combination of five different datasets [^2] that total 918 non-duplicate observations.
+Cardiovascular diseases (CVDs) are the number one cause of death globally, taking an estimated 17.9 million lives each year.  This accounts for 31% of all deaths worldwide. Four out of five CVD deaths are due to hear attacks and strokes, and one-third of these deaths occur prematurely in people under 70 years of age. Cardiovascular disease are conditions that affect the structures or function of your heart, such as: abnormal heart rhythms or arrhythmias, aorta disease, marfen syndrome, congenital heart disease, coronary artery disease, etc. Heart failure is a common event caused by CVDs. The dataset that I am using contains eleven predictive values that can be used to predict a possible heart disease. The dataset was retrieved from Kaggle[^1]. The data is the combination of five different datasets [^2] that total 918 non-duplicate observations.
 
 [^1]: https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction?sort=recent-comments
 [^2]: fedesoriano. (September 2021). Heart Failure Prediction Dataset. Retrieved 4/24/2022 from https://www.kaggle.com/fedesoriano/heart-failure-prediction.

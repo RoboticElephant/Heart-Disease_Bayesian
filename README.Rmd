@@ -1,0 +1,18 @@
+---
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Bayesian Analysis of Cardiovascular Disease 
+
+Cardiovascular diseases (CVDs) are the number one cause of death globally, taking an estimated 17.9 million lives each year.  This accounts for 31% of all deaths worldwide. Four out of five CVD deaths are due to hear attacks and strokes, and one-third of these deaths occur prematurely in people under 70 years of age. Cardiovascular disease are conditions that affect the structures or function of your heart, such as: abnormal heart rhythms or arrhythmias, aorta discease, marfen syndrome, congenital heart disease, coronary artery disease, etc. Heart failure is a common event caused by CVDs. The dataset that I am using contains eleven predictive values that can be used to predict a possible heart disease. The dataset was retrieved from Kaggle[^1]. The data is the combination of five different datasets [^2] that total 918 non-duplicate observations.
+
+
+[^1]: https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction?sort=recent-comments
+[^2]: fedesoriano. (September 2021). Heart Failure Prediction Dataset. Retrieved 4/24/2022 from https://www.kaggle.com/fedesoriano/heart-failure-prediction.
+
+See the file [Heart_Disease.md](Heart_Disease.md) for the full analysis. Review [here](prepping_heart_disease.R) for exploratory analysis.
+
