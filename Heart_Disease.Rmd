@@ -19,6 +19,7 @@ library(cmdstanr)
 check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
 library(dplyr)
 library(pROC)
+library(ggplot2)
 
 set.seed(123)
 ```
@@ -70,7 +71,13 @@ The first thing that should be done on any dataset is to plot the data and run b
 ## Resting Blood Pressure
 
 ```{r, echo=FALSE}
-plot(df$RestingBP, ylab = "Resting Blood Pressure", main = "Resting Blood Pressure with a zero Outlier")
+ggplot(df, aes(1:length(RestingBP), RestingBP, color = HeartDisease)) + 
+  geom_point() + 
+  labs(x="Data Points", y="Resting Blood Pressure", 
+       title = "Resting Blood Pressure",
+       subtitle = "with outlier") +
+  theme(plot.title=element_text(hjust=0.5), 
+        plot.subtitle = element_text(hjust=0.5))
 ```
 
 We can see in the above that we have a resting blood pressure value of **0**, which would mean that this person is dead. I could have used Bayes to impute the incorrect/missing value, but I decided to remove it because in the end one less data point won't truly affect the analysis. Also there really isn't a point to set up a Bayes model to impute a single point, in my opinion, especially with how many good points we still have. After removing the outlier, we can see the new data appears to be within the necessary values for resting blood pressure.
@@ -82,17 +89,31 @@ rownames(df) <- 1:nrow(df)
 ```
 
 ```{r, echo=F}
-plot(df$RestingBP, ylab = "Resting Blood Pressure", main = "Resting Blood Pressure (no Outliers)")
+ggplot(df, aes(1:length(RestingBP), RestingBP, color = HeartDisease)) + 
+  geom_point() + 
+  labs(x="Data Points", y="Resting Blood Pressure", 
+       title = "Resting Blood Pressure",
+       subtitle = "no outliers") +
+  theme(plot.title=element_text(hjust=0.5), 
+        plot.subtitle = element_text(hjust=0.5))
 ```
 
 ## Cholesterol
 The second issue I found while exploring the data was with the `Cholesterol`. The dataset shows that a range of indexes have a `Cholesterol` value of zero, which also like resting blood pressure is impossible.
 
 ```{r, echo=FALSE}
-plot(df$Cholesterol, ylab = 'Cholesterol', main = 'Multiple Incorrect Values for Cholesterol')
+ggplot(df, aes(1:length(Cholesterol), Cholesterol, color = HeartDisease)) + 
+  geom_point() + 
+  labs(x="Data Points", y="Cholesterol", 
+       title = "Cholesterol",
+       subtitle = "with outliers") +
+  theme(plot.title=element_text(hjust=0.5), 
+        plot.subtitle = element_text(hjust=0.5))
 ```
 
-These zero values for `Cholesterol` account for *171* values, which is approximately **18%** of the data set. This is a significant value. Normally when encountering a data set with this large of incorrect data, the goal would be to either throw out the data that is incorrect or supply the mean of the observed values for all the missing data points. Even then this is a significant amount of incorrect data. I have decided to use Bayes MCMC to try and impute the data. I used non-informative priors allowing the data set to determine what the values should be. The model that was used for this can be seen in `Appendix A: Cholesterol Imputed`. Looking at the missing values, it appears that one of the five data sets didn't have correct values for `Cholesterol`. Again normally these would be thrown out, but I decided to use a Bayesian model to find what the imputed values would be. Due to the assumption that it is an incorrect data set, I didn't split the data into training and test sets for the imputation. I am using different models for each to make sure that there isn't any leakage for determining the imputed values to later predicting the test set. 
+These zero values for `Cholesterol` account for *171* values, which is approximately **18%** of the data set. One of the other things to note is of the `171` incorrect values, `151` of them are heart disease. This is a significant value. Normally when encountering a data set with this large of incorrect data, the goal would be to either throw out the data that is incorrect or supply the mean of the observed values for all the missing data points. Even then this is a significant amount of incorrect data. 
+
+I have decided to use Bayes MCMC to try and impute the data. I used non-informative priors allowing the data set to determine what the values should be. The model that was used for this can be seen in `Appendix A: Cholesterol Imputed`. Looking at the missing values, it appears that one of the five data sets didn't have correct values for `Cholesterol`. Again normally these would be thrown out, but I decided to use a Bayesian model to find what the imputed values would be. Due to the assumption that it is an incorrect data set, I didn't split the data into training and test sets for the imputation. I am using different models for each to make sure that there isn't any leakage for determining the imputed values to later predicting the test set. 
 
 The reason I have decided to split them was due to the fact that this data set is a combination of 5 different data sets from different areas that have been combined to create a single data set. I am making the assumption that because the missing values are all relatively next to each other, that they all came from the same data set. More than likely the data would not have the missing values and, therefore, would not need to be imputed before running through the model. I could have made adjustments to the model to impute the missing Cholesterol-values for a training data set and then using this distribution determine what it would be for the test data set. I decided instead to first impute all the values and then split them into training and test sets, which could then be run through a prediction model.
 
@@ -137,7 +158,12 @@ After running the data through the stan model, I was able to get imputed data po
 
 ```{r, echo=F}
 plot(df.imp$Cholesterol[idx.mis], main = "Imputed Cholesterol", ylab = 'Cholesterol')
-plot(df.imp$Cholesterol, ylab = 'Cholesterol', main = 'All Cholesterol data points')
+
+ggplot(df.imp, aes(1:length(Cholesterol), Cholesterol, color = HeartDisease)) + 
+  geom_point() + 
+  labs(x="Data Points", y="Cholesterol", 
+       title = "Imputed Cholesterol") +
+  theme(plot.title=element_text(hjust=0.5))
 ```
 
 We can see that there is slight variation as compared to the mean value, but they aren't as varied as the original data points. No matter what was changed in the model, I was unable to get the wide variation that is seen the other data points, but the imputed data appears to make logical sense.
@@ -214,14 +240,15 @@ Now that we have the predicted values, let us check the AUC for the ROC curve to
 
 ```{r, echo=F}
 roc.score <- roc(y.test, ypred)
-plot(roc.score, main = "ROC Curve on Test Set for Predicted Values vs Actual")
+auc.v <- auc(roc.score)
+ggroc(roc.score) + 
+  labs(title = paste0("ROC Curve ", "(AUC = ", round(auc.v, 4), ")"),
+       subtitle = "Test Set Predicted vs Actual") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
 ```
 
-The ROC curve looks really good for this model. Let's see what the AUC for this model is:
-
-```{r}
-auc(roc.score)
-```
+The ROC curve looks really good for this model.
 
 We can see that we have a decent score for the Bayesian predictive model with imputed Cholesterol values.
 

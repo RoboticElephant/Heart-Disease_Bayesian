@@ -32,7 +32,7 @@ transformed parameters {
 model {
   alpha ~ normal(0, 100);
   betas ~ normal(0, 100);  // Non-informative prior
-  b_chol ~ normal(0, 100); // Non-informative prior
+  b_chol ~ normal(200, 100); // Non-informative prior
 
   mu ~ normal(300, 50);    // Non-informative prior, but expecting to be around the mean of dataset
   sigma ~ normal(0, 10);

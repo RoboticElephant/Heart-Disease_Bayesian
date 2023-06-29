@@ -2,6 +2,7 @@
 library(cmdstanr)
 library(dplyr)
 library(pROC)
+library(ggplot2)
 check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
 
 set.seed(123)
@@ -36,14 +37,37 @@ df$RestingECG <- df$RestingECG %>% as.factor %>% as.numeric
 df$ExerciseAngina <- df$ExerciseAngina %>% as.factor %>% as.numeric
 df$ST_Slope <- df$ST_Slope %>% as.factor %>% as.numeric
 
-plot(df$RestingBP, ylab = "Resting Blood Pressure", main = "Resting Blood Pressure with a zero Outlier")
+plot(df$RestingBP, ylab = "Resting Blood Pressure", 
+     main = "Resting Blood Pressure with a zero Outlier", col = df$HeartDisease)
+
+ggplot(df, aes(1:length(RestingBP), RestingBP, color = HeartDisease)) + 
+  geom_point() + 
+  labs(x="Data Points", y="Resting Blood Pressure", 
+       title = "Resting Blood Pressure",
+       subtitle = "with outlier") +
+  theme(plot.title=element_text(hjust=0.5), 
+        plot.subtitle = element_text(hjust=0.5))
+
 # Can see that we have a single outlier. For this current case, we will just drop the outlier.
 df <- df[-which.min(df$RestingBP), ]
 rownames(df) <- 1:nrow(df)
-plot(df$RestingBP, ylab = "Resting Blood Pressure", main = "Resting Blood Pressure (no Outliers)")
+ggplot(df, aes(1:length(RestingBP), RestingBP, color = HeartDisease)) + 
+  geom_point() + 
+  labs(x="Data Points", y="Resting Blood Pressure", 
+       title = "Resting Blood Pressure",
+       subtitle = "no outliers") +
+  theme(plot.title=element_text(hjust=0.5), 
+        plot.subtitle = element_text(hjust=0.5))
 
 # Now plotting the cholesterol, we can see that there are values of 0, which shouldn't be.
-plot(df$Cholesterol, ylab = 'Cholesterol', main = 'Multiple Incorrect Values for Cholesterol')
+ggplot(df, aes(1:length(Cholesterol), Cholesterol, color = HeartDisease)) + 
+  geom_point() + 
+  labs(x="Data Points", y="Cholesterol", 
+       title = "Cholesterol",
+       subtitle = "with outliers") +
+  theme(plot.title=element_text(hjust=0.5), 
+        plot.subtitle = element_text(hjust=0.5))
+
 # We will get the index of these '0' values and try to impute them
 idx.mis <- which(df$Cholesterol == 0)
 # Get the observed values
@@ -84,8 +108,14 @@ fit.imp <- mod$sample(
 df.imp <- df
 df.imp$Cholesterol[idx.mis] <- fit.imp$summary('x_mis')$mean
 
+
 plot(df.imp$Cholesterol[idx.mis], main = "Imputed Cholesterol", ylab = 'Cholesterol')
-plot(df.imp$Cholesterol, ylab = 'Cholesterol', main = 'All Cholesterol data points')
+
+ggplot(df.imp, aes(1:length(Cholesterol), Cholesterol, color = HeartDisease)) + 
+  geom_point() + 
+  labs(x="Data Points", y="Cholesterol", 
+       title = "Imputed Cholesterol") +
+  theme(plot.title=element_text(hjust=0.5))
 
 
 # --------- Split the data ---------
@@ -136,7 +166,13 @@ ypred <- fit$summary('y_pred')$mean
 # ypred <- df.ypred %>% sapply(mean)
 
 roc.score <- roc(y.test, ypred)
-auc(roc.score)
+auc <- auc(roc.score)
+plot(roc.score, main = "ROC Curve on Test Set for Predicted Values vs Actual")
+ggroc(roc.score) + 
+  labs(title = paste0("ROC Curve ", "(AUC = ", round(auc, 4), ")"),
+       subtitle = "Test Set Predicted vs Actual") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
 
 # --------------------Saving fitted model objects-------------------
 # save a fitted model object to disk and ensure that all of the contents are 

@@ -100,14 +100,17 @@ impossible.
 ![](Heart_Disease_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 These zero values for `Cholesterol` account for *171* values, which is
-approximately **18%** of the data set. This is a significant value.
-Normally when encountering a data set with this large of incorrect data,
-the goal would be to either throw out the data that is incorrect or
-supply the mean of the observed values for all the missing data points.
-Even then this is a significant amount of incorrect data. I have decided
-to use Bayes MCMC to try and impute the data. I used non-informative
-priors allowing the data set to determine what the values should be. The
-model that was used for this can be seen in
+approximately **18%** of the data set. One of the other things to note
+is of the `171` incorrect values, `151` of them are heart disease. This
+is a significant value. Normally when encountering a data set with this
+large of incorrect data, the goal would be to either throw out the data
+that is incorrect or supply the mean of the observed values for all the
+missing data points. Even then this is a significant amount of incorrect
+data.
+
+I have decided to use Bayes MCMC to try and impute the data. I used
+non-informative priors allowing the data set to determine what the
+values should be. The model that was used for this can be seen in
 `Appendix A: Cholesterol Imputed`. Looking at the missing values, it
 appears that one of the five data sets didn’t have correct values for
 `Cholesterol`. Again normally these would be thrown out, but I decided
@@ -170,27 +173,27 @@ ypred <- fit$summary('y_pred')$mean
 ypred
 ```
 
-    ##   [1] 0.12975 0.24800 0.02675 0.86600 0.88950 0.47700 0.05925 0.96350 0.27300
-    ##  [10] 0.08125 0.02500 0.10925 0.16450 0.96450 0.03875 0.46525 0.94075 0.91250
-    ##  [19] 0.11450 0.95750 0.30125 0.17150 0.94400 0.23600 0.97900 0.92100 0.28850
-    ##  [28] 0.08075 0.08350 0.99725 0.37225 0.99400 0.79075 0.94525 0.13375 0.98050
-    ##  [37] 0.18325 0.17975 0.06475 0.45550 0.92650 0.39375 0.01625 0.93400 0.00525
-    ##  [46] 0.01625 0.04450 0.93575 0.86600 0.71275 0.30475 0.12625 0.94150 0.36350
-    ##  [55] 0.13675 0.04875 0.93525 0.95275 0.89175 0.73950 0.60225 0.49225 0.92300
-    ##  [64] 0.02525 0.96475 0.91225 0.97250 0.93775 0.49175 0.44425 0.79775 0.51175
-    ##  [73] 0.74600 0.95700 0.68725 0.97775 0.04650 0.91350 0.68850 0.82975 0.98175
-    ##  [82] 0.71425 0.99200 0.93475 0.97700 0.98875 0.98800 0.97625 0.53075 0.09150
-    ##  [91] 0.99900 0.60600 0.97650 0.86125 0.97975 0.78875 0.97125 0.29725 0.95575
-    ## [100] 0.90125 0.92750 0.99200 0.48625 0.52925 0.92800 0.92750 0.11925 0.95625
-    ## [109] 0.96500 0.87325 0.94500 0.98575 0.95425 0.15375 0.95275 0.98350 0.95575
-    ## [118] 0.92350 0.86225 0.69300 0.90825 0.59975 0.46950 0.06925 0.01075 0.88350
-    ## [127] 0.08650 0.04375 0.14600 0.12975 0.05325 0.93900 0.42675 0.11200 0.87150
-    ## [136] 0.90375 0.07450 0.72000 0.60875 0.99775 0.96325 0.06675 0.14100 0.73075
-    ## [145] 0.13550 0.97550 0.01450 0.30150 0.34050 0.73550 0.01775 0.26075 0.17550
-    ## [154] 0.35900 0.06975 0.50025 0.66050 0.04700 0.14325 0.93600 0.72350 0.35925
-    ## [163] 0.22125 0.45200 0.12725 0.96025 0.08925 0.96000 0.92475 0.08700 0.41450
-    ## [172] 0.48275 0.55200 0.96900 0.08625 0.96375 0.32675 0.03375 0.02900 0.17425
-    ## [181] 0.37375 0.24450 0.97850 0.31450
+    ##   [1] 0.13725 0.23000 0.02475 0.86450 0.88675 0.45525 0.06475 0.96675 0.27550
+    ##  [10] 0.08400 0.02025 0.10850 0.16100 0.96275 0.04075 0.47875 0.95175 0.90725
+    ##  [19] 0.13050 0.95075 0.29975 0.16325 0.95600 0.24150 0.98250 0.92375 0.27200
+    ##  [28] 0.08875 0.09375 0.99650 0.36025 0.99300 0.78100 0.93850 0.14475 0.97575
+    ##  [37] 0.18200 0.18650 0.06825 0.43300 0.91900 0.38900 0.01225 0.93875 0.00375
+    ##  [46] 0.01450 0.03725 0.93800 0.87350 0.72050 0.31000 0.12525 0.94525 0.37825
+    ##  [55] 0.12950 0.04775 0.92825 0.95950 0.89450 0.74925 0.59675 0.49350 0.92750
+    ##  [64] 0.02600 0.95725 0.92225 0.97250 0.93550 0.48400 0.45050 0.81175 0.51100
+    ##  [73] 0.73725 0.96300 0.68125 0.97925 0.04850 0.91400 0.67025 0.82250 0.97925
+    ##  [82] 0.72300 0.99225 0.93150 0.97300 0.99125 0.98575 0.98000 0.53775 0.08425
+    ##  [91] 0.99900 0.59900 0.97875 0.85600 0.97675 0.78700 0.97625 0.31400 0.94850
+    ## [100] 0.89175 0.92675 0.99175 0.49825 0.53875 0.93575 0.92625 0.12750 0.95725
+    ## [109] 0.97125 0.87900 0.94825 0.98225 0.94875 0.16850 0.95525 0.98675 0.95275
+    ## [118] 0.92225 0.86575 0.70575 0.91600 0.58325 0.44875 0.07950 0.00925 0.87175
+    ## [127] 0.09075 0.04175 0.16000 0.13225 0.04200 0.93925 0.43050 0.11300 0.87175
+    ## [136] 0.91175 0.07725 0.71875 0.62150 0.99725 0.96875 0.06300 0.14625 0.73625
+    ## [145] 0.13925 0.97775 0.01550 0.31200 0.31975 0.74825 0.02075 0.25525 0.17650
+    ## [154] 0.36200 0.07275 0.49425 0.67775 0.04950 0.14850 0.93350 0.72350 0.35775
+    ## [163] 0.23675 0.44100 0.13550 0.95575 0.10000 0.95425 0.92350 0.08775 0.41275
+    ## [172] 0.49650 0.54475 0.96450 0.08650 0.96000 0.32050 0.03550 0.02775 0.17475
+    ## [181] 0.35950 0.24875 0.97725 0.30000
 
 Now that we have the predicted values, let us check the AUC for the ROC
 curve to determine the accuracy of the model.
@@ -201,14 +204,7 @@ curve to determine the accuracy of the model.
 
 ![](Heart_Disease_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
-The ROC curve looks really good for this model. Let’s see what the AUC
-for this model is:
-
-``` r
-auc(roc.score)
-```
-
-    ## Area under the curve: 0.9181
+The ROC curve looks really good for this model.
 
 We can see that we have a decent score for the Bayesian predictive model
 with imputed Cholesterol values.
@@ -277,7 +273,7 @@ actual.
     ## model {
     ##   alpha ~ normal(0, 100);
     ##   betas ~ normal(0, 100);  // Non-informative prior
-    ##   b_chol ~ normal(0, 100); // Non-informative prior
+    ##   b_chol ~ normal(200, 100); // Non-informative prior
     ## 
     ##   mu ~ normal(300, 50);    // Non-informative prior, but expecting to be around the mean of dataset
     ##   sigma ~ normal(0, 10);
